@@ -32,7 +32,7 @@ from tqdm import tqdm, trange
 from einops import rearrange
 #from torchvision.utils import make_grid
 import sysconfig
-
+import json
 sys.path.append(sysconfig.get_path('data')+'/src/latent-diffusion')
 sys.path.append(sysconfig.get_path('data')+'/src/taming-transformers')
 from ldm.util import instantiate_from_config
@@ -69,11 +69,18 @@ def genImages(prompt='default prompt',dimmSteps=200,dimmEta=0.0,numIter=1,height
 	sampler = DDIMSampler(model)
 
 	#os.makedirs(opt.outdir, exist_ok=True)
-	
-
-	prompt 
-
-
+	dictargs={
+		'prompt':prompt,
+		'dimmSteps':dimmSteps,
+		'dimmEta':dimmEta,
+		'numIter':numIter,
+		'height':height,
+		'width':width,
+		'numSamples':numSamples,
+		'scale':scale
+	}
+	exifdata=Image.Exif()
+	exifdata[37510]=bytes.fromhex('00 00 00 00 00 00 00 00')+json.dumps(dictargs).encode(encoding='utf-8')
 	sample_path = os.path.join("static","latentdiff" ,"images")
 	os.makedirs(sample_path, exist_ok=True)
 	base_count = len(os.listdir(sample_path))
@@ -103,7 +110,7 @@ def genImages(prompt='default prompt',dimmSteps=200,dimmEta=0.0,numIter=1,height
 					x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
 					imgsavepath=os.path.join(sample_path, f"{base_count:04}.png")
 					imagesGenerated.append(imgsavepath)
-					Image.fromarray(x_sample.astype(np.uint8)).save(imgsavepath)
+					Image.fromarray(x_sample.astype(np.uint8)).save(imgsavepath,exif=exifdata)
 
 					base_count += 1
 				all_samples.append(x_samples_ddim)
