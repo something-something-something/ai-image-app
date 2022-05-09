@@ -37,7 +37,7 @@ sys.path.append(sysconfig.get_path('data')+'/src/latent-diffusion')
 sys.path.append(sysconfig.get_path('data')+'/src/taming-transformers')
 from ldm.util import instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
-
+from datetime import date
 
 def load_model_from_config(config, ckpt, verbose=False):
 	print(f"Loading model from {ckpt}")
@@ -81,7 +81,7 @@ def genImages(prompt='default prompt',dimmSteps=200,dimmEta=0.0,numIter=1,height
 	}
 	exifdata=Image.Exif()
 	exifdata[37510]=bytes.fromhex('00 00 00 00 00 00 00 00')+json.dumps(dictargs).encode(encoding='utf-8')
-	sample_path = os.path.join("static","latentdiff" ,"images")
+	sample_path = os.path.join("static","latentdiff" ,"images",date.today().isoformat())
 	os.makedirs(sample_path, exist_ok=True)
 	base_count = len(os.listdir(sample_path))
 	imagesGenerated=[]
