@@ -6,14 +6,7 @@ Made using latent diffusion, flask, next.js
 
 # Requirements
 
-*	python 3.10.4
-*	python-poetry 1.1.13
-*	cuda 11.6.1
-*	nodejs 17.9.0
-*	npm 8.5.5
-
-NOTE: REQUIRES A GRAPHICS CARD WITH LOTS OF MEMORY
-
+TODO
 
 # Setup
 
@@ -22,17 +15,13 @@ NOTE: REQUIRES A GRAPHICS CARD WITH LOTS OF MEMORY
 ### Install dependencies
 `cd backend`
 
-`sh setup.sh`
-
-### Download model
-
-Download model from https://github.com/CompVis/latent-diffusion and save it as `backend/modelimg/model.ckpt`
+`poetry install`
 
 ## Setup frontend
 
 `cd frontend`
 
-`npm install`
+`npm ci`
 
 # Running the project
 

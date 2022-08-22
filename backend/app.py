@@ -1,7 +1,7 @@
 from flask import Flask
 from webargs import fields
 from webargs.flaskparser import use_args
-import latentDiff
+import genImages
 app=Flask(__name__)
 
 
@@ -18,11 +18,9 @@ def genImagePreflight():
 @app.route("/genimage",methods=["POST"])
 @use_args({"prompt":fields.Str(required=True),"scale":fields.Float(),"width":fields.Integer(),"height":fields.Integer(),"numSamples":fields.Integer()})
 def genImage(args):
-	l=[]
-	l.append('test')
-	l.append('test2')
 
-	images=latentDiff.genImages(prompt=args["prompt"], width=args["width"], height=args["height"], scale=args["scale"],numSamples=args["numSamples"])
+	images=genImages.saveImages(genImages.genLatentDiffusion(prompt=args["prompt"], width=args["width"], height=args["height"], scale=args["scale"],numSamples=args["numSamples"]),"latent-diffusion",genImages.imageDirPath())
+	
 	return {
 		"prompt":args["prompt"],
 		"files":images
