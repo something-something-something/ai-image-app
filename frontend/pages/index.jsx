@@ -3,11 +3,20 @@ import { useContext, useEffect, useReducer, createContext } from "react"
 function MainPage() {
 
 
-	return <>
-
-		<ImageGenForm endpointForFetchingFormData="http://localhost:5000/latentDiffusion/getFormFields" endpointForSubmittingForm="http://localhost:5000/latentDiffusion/genimage"/>
-
-	</>;
+	return (<>
+		<details>
+			<summary>
+				Stable Diffusion
+			</summary>
+			<ImageGenForm endpointForFetchingFormData="http://localhost:5000/stableDiffusion/getFormFields" endpointForSubmittingForm="http://localhost:5000/stableDiffusion/genimage" />
+		</details>
+		<details>
+			<summary>
+				Latent Diffusion
+			</summary>
+			<ImageGenForm endpointForFetchingFormData="http://localhost:5000/latentDiffusion/getFormFields" endpointForSubmittingForm="http://localhost:5000/latentDiffusion/genimage" />
+		</details>
+	</>);
 }
 
 
