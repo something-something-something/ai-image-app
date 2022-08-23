@@ -25,19 +25,20 @@ const ImageGenFormDispatch =createContext(null);
 
 //TODO figure out Names
 function ImageGenFormWithTextFields({formFieldsData,formFieldValues,submitAction}){
+	console.log(formFieldsData)
 	return (<form onSubmit={async (ev)=>{
 		ev.preventDefault();
 		submitAction();
 	}}>
 			{formFieldsData.map((fieldData)=>{
-				return <ImageGenField key={fieldData.name} name={fieldData.name} displayName={fieldData.displayName} value={formFieldValues[fieldData.name]} type={fieldData.type}/>
+				return <ImageGenField key={fieldData.name} name={fieldData.name} displayName={fieldData.displayName} value={formFieldValues[fieldData.name]} type={fieldData.type} possibleValues={fieldData.possibleValues}/>
 			})}
 
 			<input type="submit" value="Generate Image" />
 	</form>)
 }
 
-function ImageGenField({name,value,displayName,type}){
+function ImageGenField({name,value,displayName,type,possibleValues}){
 
 	const dispatch=useContext(ImageGenFormDispatch);
 	const changeFunc=(ev)=>{
@@ -49,6 +50,9 @@ function ImageGenField({name,value,displayName,type}){
 	if(type==='textbox'){
 		FieldToUse=TextBoxFieldInput;
 	}
+	else if(type=='radio'){
+		FieldToUse=RadioFieldInput
+	}
 	
 
 
@@ -56,7 +60,7 @@ function ImageGenField({name,value,displayName,type}){
 		<div style={{padding:'0.5rem'}}>
 			<label>{displayName}<br/>
 
-				<FieldToUse value={value} onChange={changeFunc}/>
+				<FieldToUse value={value} name={name} onChange={changeFunc} possibleValues={possibleValues}/>
 
 
 			</label>
@@ -74,18 +78,36 @@ function ImageGenField({name,value,displayName,type}){
 }
 
 
-function TextFieldInput({value,onChange}){
+function RadioFieldInput({value,name,onChange,possibleValues}){
 	return (
-		<input value={value} onChange={onChange} type="text"/>
+		<>
+		{
+			possibleValues.map( (pv)=>{
+			return (
+				<label key={pv.value} style={{display:'block'}}>
+				<input  value={pv.value} name={name} onChange={onChange} type="radio" checked={pv.value===value}/>{pv.displayName}
+				</label>
+				)
+		} )}
+		</>
+	)
+}
+
+function TextFieldInput({value,name,onChange}){
+	return (
+		<input value={value} name={name} onChange={onChange} type="text"/>
 	)
 }
 
 
-function TextBoxFieldInput({value,onChange}){
+
+function TextBoxFieldInput({value,name,onChange}){
 	return (
-		<textarea value={value} onChange={onChange} type="text"/>
+		<textarea value={value} name={name} onChange={onChange} style={{minHeight:'4rem',minWidth:'30rem'}}/>
 	)
 }
+
+
 
 function formImageReducer(state,data){
 

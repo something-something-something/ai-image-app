@@ -84,10 +84,10 @@ def genStableDiffusionImagesPreflight():
 	return '',optionsPrefilghtResponseHeaders
 
 @app.route("/stableDiffusion/genimage",methods=["POST"])
-@use_args({"prompt":fields.Str(required=True),"guidance_scale":fields.Float(),"width":fields.Integer(),"height":fields.Integer(),"num_samples":fields.Integer(),"seed":fields.Integer(),"eta":fields.Float(),"num_inference_steps":fields.Integer()})
+@use_args({"prompt":fields.Str(required=True),"guidance_scale":fields.Float(),"width":fields.Integer(),"height":fields.Integer(),"num_samples":fields.Integer(),"seed":fields.Integer(),"eta":fields.Float(),"num_inference_steps":fields.Integer(),"enable_safety_checker":fields.Boolean(truthy=['on'],falsy=['off'])})
 def genStableDiffusionImages(args):
 	print('gen stablediff')
-	images=genImages.saveImages(genImages.genStableDiffusion(prompt=args["prompt"], width=args["width"], height=args["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"]),"stable-diffusion",genImages.imageDirPath())
+	images=genImages.saveImages(genImages.genStableDiffusion(prompt=args["prompt"], width=args["width"], height=args["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"],enable_safety_checker=args["enable_safety_checker"]),"stable-diffusion",genImages.imageDirPath())
 	
 	return {
 		"prompt":args["prompt"],
@@ -146,7 +146,25 @@ def getStableDiffusionFormData():
 				"name":'seed',
 				"displayName":"seed",
 				"defaultValue":"100"
+			},
+			{
+				"name":'enable_safety_checker',
+				"displayName":"saftey checker",
+				"defaultValue":"on",
+				"type":"radio",
+				'possibleValues':[
+					{
+						'value':'on',
+						'displayName':'Enable Saftey Checker'
+					},
+					{
+						'value':'off',
+						'displayName':'Disable Saftey Checker'
+					}
+					
+				]
 			}
+			
 
 		]
 	},defaultHeaders

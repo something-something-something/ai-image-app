@@ -29,7 +29,7 @@ def genLatentDiffusion(prompt='default prompt',dimmSteps=200,dimmEta=0.0,numIter
 	}
 
 
-def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=512,width=512,num_samples=4):
+def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=512,width=512,num_samples=4,enable_safety_checker=True):
 
 	lms=LMSDiscreteScheduler(
 		beta_start=0.000085,
@@ -44,10 +44,11 @@ def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,s
 	).to("cuda")
 
 	generatorSeed=torch.Generator("cuda").manual_seed(seed)
+	if not enable_safety_checker:
+		model.safety_checker=blah
 	
 	with autocast("cuda"):
 		images=model(prompt=[prompt]*num_samples, num_inference_steps= num_inference_steps,eta=eta,guidance_scale=guidance_scale,height=height,width=width,  generator=generatorSeed)["sample"]
-	print(images)
 	return {
 		'images':images,
 		'metadata':{
@@ -92,5 +93,9 @@ def saveImages(obj,algoName,baseImageDir):
 	return imgPaths
 
 
+def blah(images,clip_input):
+	print('blah')
+	has_nsfw_concepts=[]
+	return images, has_nsfw_concepts
 
 
