@@ -273,9 +273,9 @@ function DisplayImages({images}){
 	let genImages=images.map((img)=>{
 		let imgUrlBase=new URL('http://localhost:5000/');
 		imgUrlBase.pathname=img;
-		return (<li key={img}> <img src={ imgUrlBase.href} /> </li>);
+		return (<img key={img} style={{width:'30vw',margin:'1vw'}} src={ imgUrlBase.href} />);
 	})
-	return <>Images:<ol >{genImages}</ol></>;
+	return <>Images:<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr'}}>{genImages}</div></>;
 
 }
 
