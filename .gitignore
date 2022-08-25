@@ -3,6 +3,6 @@ frontend/.next/
 
 backend/static/latentdiff/
 backend/static/generated/images
-backend/__pycache__
 backend/modelimg/
 backend/models
+__pycache__/

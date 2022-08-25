@@ -2,6 +2,9 @@ from flask import Flask
 from webargs import fields
 from webargs.flaskparser import use_args
 import genImages
+from PIL import Image
+import urllib.request
+
 app=Flask(__name__)
 
 
@@ -167,4 +170,111 @@ def getStableDiffusionFormData():
 			
 
 		]
+	},defaultHeaders
+
+
+@app.route("/stableDiffusionImgToImg/getFormFields",methods=["OPTIONS"])
+def getStableDiffusionImgToImgFormDataPreflight():
+	print('preflight')
+	return '',optionsPrefilghtResponseHeaders
+
+
+@app.route("/stableDiffusionImgToImg/getFormFields",methods=["POST"])
+def getStableDiffusionImgToImgFormData():
+	
+	return {
+		"formFieldsData":[
+			{
+				"name":'prompt',
+				"displayName":"Prompt",
+				"defaultValue":"a painting of an ai",
+				"type":"textbox"
+			},
+			{
+				"name":'image',
+				"displayName":"Image",
+				"defaultValue":{
+					'imgUrl':'',
+					'width':512,
+					'height':512
+				},
+				"type":"imagewidthheight"
+			},
+			{
+				"name":'strength',
+				"displayName":"Strength",
+				"defaultValue":"0.8"
+			},
+
+			{
+				"name":'guidance_scale',
+				"displayName":"guidance_scale",
+				"defaultValue":"7.5"
+			},
+			{
+				"name":'num_samples',
+				"displayName":"Number of pictures",
+				"defaultValue":"6"
+			},
+			{
+				"name":'num_inference_steps',
+				"displayName":"Number Inference Steps",
+				"defaultValue":"50"
+			},
+			{
+				"name":'eta',
+				"displayName":"eta",
+				"defaultValue":"0.0"
+			},
+			{
+				"name":'seed',
+				"displayName":"seed",
+				"defaultValue":"100"
+			},
+			{
+				"name":'enable_safety_checker',
+				"displayName":"saftey checker",
+				"defaultValue":"on",
+				"type":"radio",
+				'possibleValues':[
+					{
+						'value':'on',
+						'displayName':'Enable Saftey Checker'
+					},
+					{
+						'value':'off',
+						'displayName':'Disable Saftey Checker'
+					}
+					
+				]
+			}
+			
+
+		]
+	},defaultHeaders
+
+
+
+
+
+
+@app.route("/stableDiffusionImgToImg/genimage",methods=["OPTIONS"])
+def genStableDiffusionImgToImgImagesPreflight():
+	print('preflight')
+	return '',optionsPrefilghtResponseHeaders
+
+@app.route("/stableDiffusionImgToImg/genimage",methods=["POST"])
+@use_args({"prompt":fields.Str(required=True),"guidance_scale":fields.Float(),"num_samples":fields.Integer(),"seed":fields.Integer(),"eta":fields.Float(),"num_inference_steps":fields.Integer(),"enable_safety_checker":fields.Boolean(truthy=['on'],falsy=['off']),"image":fields.Nested(
+{"height":fields.Integer(),"width":fields.Integer(),"imgUrl":fields.Str(required=True)}), "strength":fields.Float() })
+def genStableDiffusionImgToImgImages(args):
+
+	print('gen stablediff img2img')
+
+	img=Image.open(urllib.request.urlopen(args["image"]["imgUrl"])).convert("RGB")
+
+	images=genImages.saveImages(genImages.genStableDiffusionImgToImg(prompt=args["prompt"], width=args["image"]["width"], height=args["image"]["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"],enable_safety_checker=args["enable_safety_checker"],image=img,strength=args["strength"]),"stable-diffusion-img2img",genImages.imageDirPath())
+
+	return {
+		"prompt":args["prompt"],
+		"files":images
 	},defaultHeaders

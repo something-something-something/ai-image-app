@@ -7,6 +7,7 @@ from diffusers import DiffusionPipeline,StableDiffusionPipeline,LMSDiscreteSched
 from PIL import Image
 from torch import autocast
 import torch
+from additionalpipelines import imgtoimg
 
 def genLatentDiffusion(prompt='default prompt',dimmSteps=200,dimmEta=0.0,numIter=1,height=256,width=256,numSamples=4,scale=5.0):
 
@@ -66,6 +67,51 @@ def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,s
 				'beta_start':0.000085,
 				'beta_end':0.012,
 				'beta_schedule':"scaled_linear"
+			}
+		}
+	}
+
+
+
+
+
+
+def genStableDiffusionImgToImg(prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=512,width=512,num_samples=4,enable_safety_checker=True,image=Image.new("RGB",(512,512)),strength=0.8):
+	img=image.resize((width,height))
+	initImg=imgtoimg.preprocess(img)
+	# lms=LMSDiscreteScheduler(
+	# 	beta_start=0.000085,
+	# 	beta_end=0.012,
+	# 	beta_schedule="scaled_linear"
+	# )
+
+	model=imgtoimg.StableDiffusionImg2ImgPipeline.from_pretrained(
+		"models/stable-diffusion-v1-4",
+	 	local_files_only=True
+		#scheduler=lms
+	).to("cuda")
+
+	generatorSeed=torch.Generator("cuda").manual_seed(seed)
+	if not enable_safety_checker:
+		model.safety_checker=blah
+	
+	with autocast("cuda"):
+		images=model(prompt=[prompt]*num_samples, num_inference_steps= num_inference_steps,eta=eta,guidance_scale=guidance_scale,  generator=generatorSeed,init_image=initImg,strength=strength)["sample"]
+	return {
+		'images':images,
+		'metadata':{
+			'prompt':prompt,
+			'num_inference_steps':num_inference_steps,
+			'eta':eta,
+			'height':height,
+			'width':width,
+			'num_samples':num_samples,
+			'guidance_scale':guidance_scale,
+			'seed':seed,
+			'strength':strength,
+			'model':'stable-diffusion-img2img:CompVis/stable-diffusion-v1-4',
+			'scheduler':{
+				'type':'default'
 			}
 		}
 	}

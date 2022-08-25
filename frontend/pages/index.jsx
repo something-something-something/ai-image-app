@@ -1,4 +1,4 @@
-import { useContext, useEffect, useReducer, createContext } from "react"
+import { useContext, useEffect, useReducer, createContext, useState } from "react"
 
 function MainPage() {
 
@@ -11,11 +11,16 @@ function MainPage() {
 			<ImageGenForm endpointForFetchingFormData="http://localhost:5000/stableDiffusion/getFormFields" endpointForSubmittingForm="http://localhost:5000/stableDiffusion/genimage" />
 		</details>
 		<details>
+			<summary>Image To Image Stable Diffusion</summary>
+			<ImageGenForm endpointForFetchingFormData="http://localhost:5000/stableDiffusionImgToImg/getFormFields" endpointForSubmittingForm="http://localhost:5000/stableDiffusionImgToImg/genimage"/>
+		</details>
+		<details>
 			<summary>
 				Latent Diffusion
 			</summary>
 			<ImageGenForm endpointForFetchingFormData="http://localhost:5000/latentDiffusion/getFormFields" endpointForSubmittingForm="http://localhost:5000/latentDiffusion/genimage" />
 		</details>
+		
 	</>);
 }
 
@@ -41,26 +46,31 @@ function ImageGenFormWithTextFields({formFieldsData,formFieldValues,submitAction
 function ImageGenField({name,value,displayName,type,possibleValues}){
 
 	const dispatch=useContext(ImageGenFormDispatch);
+	const updateFieldValue=(value)=>{
+		dispatch({type:'formField',action:'set',name:name,value:value});
+	}
 	const changeFunc=(ev)=>{
-		dispatch({type:'formField',action:'set',name:name,value:ev.target.value});
+		updateFieldValue(ev.target.value);
 	};
-
+	
 
 	let FieldToUse=TextFieldInput
 	if(type==='textbox'){
 		FieldToUse=TextBoxFieldInput;
 	}
-	else if(type=='radio'){
-		FieldToUse=RadioFieldInput
+	else if(type==='radio'){
+		FieldToUse=RadioFieldInput;
 	}
-	
+	else if(type==='imagewidthheight'){
+		FieldToUse=FileFieldInput;
+	}
 
 
 	return (
 		<div style={{padding:'0.5rem'}}>
 			<label>{displayName}<br/>
 
-				<FieldToUse value={value} name={name} onChange={changeFunc} possibleValues={possibleValues}/>
+				<FieldToUse value={value} name={name} onChange={changeFunc} possibleValues={possibleValues} updateFieldValue={updateFieldValue}/>
 
 
 			</label>
@@ -99,6 +109,75 @@ function TextFieldInput({value,name,onChange}){
 	)
 }
 
+function fileToDataURL(file){
+	return new Promise((resolve)=>{
+		const fr=new FileReader();
+		fr.addEventListener('load',()=>{resolve(fr.result)});
+		fr.readAsDataURL(file);
+	});
+}
+
+//rename
+function FileFieldInput({value,name,onChange,updateFieldValue}){
+	const [imgOriginalHeight,setImgOriginalHeight]=useState(value.height);
+
+	const [imgOriginalWidth,setImgOriginalWidth]=useState(value.height);
+
+	const [scale,setScale]=useState(1);
+
+	const calcScaledDimensions=({scale,height,width})=>{
+		return {
+			width:Math.round(scale*width),
+			height:Math.round(scale*height)
+		}
+
+	}
+
+	const fileSelected=async (ev)=>{
+		if(ev.target.files.length>0){
+			let originalImage=await createImageBitmap(ev.target.files[0])
+			setImgOriginalHeight(originalImage.height);
+
+			setImgOriginalWidth(originalImage.width);
+		
+			updateFieldValue(
+				{
+					...calcScaledDimensions({
+						height:originalImage.height,
+						width:originalImage.width,
+						scale:scale
+					}),
+					imgUrl:await fileToDataURL(ev.target.files[0])
+				}
+			);
+		}
+		
+	};
+	return (
+		<>render height:<b>{value.height}</b> <br/>
+		render width:<b>{value.width} </b><br/>
+			<label>Scale:<input value={scale} onChange={(ev)=>{
+					setScale(ev.target.value);
+					updateFieldValue({
+						...calcScaledDimensions({
+							height:imgOriginalHeight,
+							width:imgOriginalWidth,
+							scale:ev.target.value
+						}),
+						imgUrl:value.imgUrl
+					})
+				}} type="number" min="0" step="any"/></label><br/>
+				Original Height:{imgOriginalHeight}<br/> original width: {imgOriginalWidth}<br/>
+				
+			<input onChange={fileSelected} name={name} accept="image/*" style={{maxWidth:'90%'}}  type="file"/>
+			{
+				value?.imgUrl?.length>0?<img style={{maxWidth:'90%'}} src={value.imgUrl}/>:<b>You must upload an img</b>
+			}
+			
+		</>
+		
+	)
+}
 
 
 function TextBoxFieldInput({value,name,onChange}){
@@ -195,40 +274,55 @@ function formImageFormFieldReducer(state,data){
 
 
 
-async function getFormDataFromEndpoint({dispatch,endpointForFetchingFormData}){
+async function getFormDataFromEndpoint({ dispatch, endpointForFetchingFormData }) {
+	try {
+		let resp = await fetch(endpointForFetchingFormData, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		let formData = await resp.json();
 
-	let resp=await fetch(endpointForFetchingFormData,{
-		method:'POST',
-		headers:{
-			'Content-Type':'application/json'
-		}
-	});
-	let formData=await resp.json();
+		dispatch({ type: 'loadFormData', value: formData })
+	}
+	catch (err) {
 
-	dispatch({type:'loadFormData',value:formData})
-};
+		console.log('FETCH OF INIT DATA FAILED');
 
-async function submitPromptAndParameters({formFieldsData,formFieldValues,endpointForSubmittingForm,dispatch}){
-
-	let jsonForSubmiting={};
-	for (let field of formFieldsData){
-		jsonForSubmiting[field.name]=formFieldValues[field.name];
+		console.log(err);
+		///alert('error check console +')
 	}
 
+};
 
-
-	let resp=await fetch(endpointForSubmittingForm,{
-		method:'POST',
-		body:JSON.stringify(jsonForSubmiting,null,'\t'),
-		headers:{
-			'Content-Type':'application/json'
+async function submitPromptAndParameters({ formFieldsData, formFieldValues, endpointForSubmittingForm, dispatch }) {
+	try {
+		let jsonForSubmiting = {};
+		for (let field of formFieldsData) {
+			jsonForSubmiting[field.name] = formFieldValues[field.name];
 		}
-	});
-	let imgData=await resp.json();
 
 
 
-	dispatch({type:'images',action:'set',value:imgData});
+		let resp = await fetch(endpointForSubmittingForm, {
+			method: 'POST',
+			body: JSON.stringify(jsonForSubmiting, null, '\t'),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		let imgData = await resp.json();
+
+
+
+		dispatch({ type: 'images', action: 'set', value: imgData });
+	}
+	catch (err) {
+		console.log(err);
+
+		alert('Error occured check console: '+err);
+	}
 }
 
 
