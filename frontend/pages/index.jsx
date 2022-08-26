@@ -118,6 +118,7 @@ function fileToDataURL(file){
 }
 
 //rename
+//clean up
 function FileFieldInput({value,name,onChange,updateFieldValue}){
 	const [imgOriginalHeight,setImgOriginalHeight]=useState(value.height);
 
@@ -153,9 +154,35 @@ function FileFieldInput({value,name,onChange,updateFieldValue}){
 		}
 		
 	};
+
+	const getScaleToTarget=(basedimm,targetdimm)=>{
+		return targetdimm/basedimm;
+	}
+
+	const updateDimmAndScaleBasedOnTarget=(basedimm,targetdimm)=>{
+		const scaleValue=getScaleToTarget(basedimm,targetdimm);
+		updateFieldValue({
+			...calcScaledDimensions({
+				height:imgOriginalHeight,
+				width:imgOriginalWidth,
+				scale:scaleValue
+			}),
+			imgUrl:value.imgUrl
+		});
+		setScale(scaleValue);
+	}
+	
 	return (
-		<>render height:<b>{value.height}</b> <br/>
-		render width:<b>{value.width} </b><br/>
+		<>render height:<b>{value.height}</b>
+		 <button onClick={(ev)=>{
+			updateDimmAndScaleBasedOnTarget(imgOriginalHeight,512)
+		}} type="button">Set to 512</button>
+		<br/>
+		render width:<b>{value.width} </b>
+		<button onClick={(ev)=>{
+			updateDimmAndScaleBasedOnTarget(imgOriginalWidth,512)
+		}} type="button">Set to 512</button>
+		<br/>
 			<label>Scale:<input value={scale} onChange={(ev)=>{
 					setScale(ev.target.value);
 					updateFieldValue({
