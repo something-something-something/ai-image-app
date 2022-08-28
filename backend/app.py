@@ -1,4 +1,5 @@
-from flask import Flask
+import tempfile
+from flask import Flask,Blueprint
 from webargs import fields
 from webargs.flaskparser import use_args
 import genImages
@@ -6,6 +7,13 @@ from PIL import Image
 import urllib.request
 
 app=Flask(__name__)
+
+tempDirForGenerated=tempfile.mkdtemp(prefix='ai-image-app')
+
+print('tempdir= '+tempDirForGenerated)
+
+tempDirBlueprint=Blueprint('tempfiles',__name__,static_folder=tempDirForGenerated,static_url_path='/tempstatic' )
+app.register_blueprint(tempDirBlueprint)
 
 
 # TODO Figure out where to set these globally
@@ -87,10 +95,19 @@ def genStableDiffusionImagesPreflight():
 	return '',optionsPrefilghtResponseHeaders
 
 @app.route("/stableDiffusion/genimage",methods=["POST"])
-@use_args({"prompt":fields.Str(required=True),"guidance_scale":fields.Float(),"width":fields.Integer(),"height":fields.Integer(),"num_samples":fields.Integer(),"seed":fields.Integer(),"eta":fields.Float(),"num_inference_steps":fields.Integer(),"enable_safety_checker":fields.Boolean(truthy=['on'],falsy=['off'])})
+@use_args({"prompt":fields.Str(required=True),"guidance_scale":fields.Float(),"width":fields.Integer(),"height":fields.Integer(),"num_samples":fields.Integer(),"seed":fields.Integer(),"eta":fields.Float(),"num_inference_steps":fields.Integer(),"enable_safety_checker":fields.Boolean(truthy=['on'],falsy=['off']),"use_temp_dir":fields.Boolean(truthy=['on'],falsy=['off'])})
 def genStableDiffusionImages(args):
 	print('gen stablediff')
-	images=genImages.saveImages(genImages.genStableDiffusion(prompt=args["prompt"], width=args["width"], height=args["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"],enable_safety_checker=args["enable_safety_checker"]),"stable-diffusion",genImages.imageDirPath())
+
+	
+	dirToWriteImage=genImages.imageDirPath()
+	urlPathForImages=None
+
+	if args["use_temp_dir"]:
+		dirToWriteImage=genImages.imageDirTempPath(tempDirForGenerated)
+		urlPathForImages=genImages.imageDirTempUrlPath()
+
+	images=genImages.saveImages(genImages.genStableDiffusion(prompt=args["prompt"], width=args["width"], height=args["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"],enable_safety_checker=args["enable_safety_checker"]),"stable-diffusion",dirToWriteImage,urlPath=urlPathForImages)
 	
 	return {
 		"prompt":args["prompt"],
@@ -166,8 +183,24 @@ def getStableDiffusionFormData():
 					}
 					
 				]
+			},
+			{
+				"name":'use_temp_dir',
+				"displayName":"use temp dir",
+				"defaultValue":"off",
+				"type":"radio",
+				'possibleValues':[
+					{
+						'value':'on',
+						'displayName':'save to temp dir '+tempDirForGenerated
+					},
+					{
+						'value':'off',
+						'displayName':'Save to backend/static'
+					}
+					
+				]
 			}
-			
 
 		]
 	},defaultHeaders

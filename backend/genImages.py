@@ -117,11 +117,20 @@ def genStableDiffusionImgToImg(prompt='default prompt', num_inference_steps=50,e
 	}
 
 
+def pathToGenerated():
+	return posixpath.join('generated','images',date.today().isoformat())
+
+def imageDirTempPath(tempdir):
+	return posixpath.join(tempdir,pathToGenerated())
+
+def imageDirTempUrlPath():
+	return posixpath.join('tempstatic',pathToGenerated())
+
 def imageDirPath():
-	return posixpath.join('static','generated','images',date.today().isoformat())
+	return posixpath.join('static',pathToGenerated())
 
 
-def saveImages(obj,algoName,baseImageDir):
+def saveImages(obj,algoName,baseImageDir,urlPath=None):
 	directoryPath=posixpath.join(baseImageDir,algoName)
 	os.makedirs(directoryPath,exist_ok=True)
 	totalImgInDir=len(os.listdir(directoryPath))
@@ -132,9 +141,15 @@ def saveImages(obj,algoName,baseImageDir):
 	imgPaths=[]
 	imgnum=totalImgInDir+1
 	for img in obj["images"]:
-		imgpath=posixpath.join(directoryPath,algoName+"-"+str(datetime.now(tz=timezone.utc).timestamp())+"-imageNumber-"+str(imgnum)+".png")
-		img.save(imgpath,exif=exifdata)
-		imgPaths.append(imgpath)
+		filename=algoName+"-"+str(datetime.now(tz=timezone.utc).timestamp())+"-imageNumber-"+str(imgnum)+".png"
+		savepath=directoryPath
+		imgsavepath=posixpath.join(savepath,filename)
+		img.save(imgsavepath,exif=exifdata)
+
+		if urlPath is None:
+			imgPaths.append(imgsavepath)
+		else:
+			imgPaths.append(posixpath.join(urlPath,algoName,filename))
 		imgnum+=1
 	return imgPaths
 
