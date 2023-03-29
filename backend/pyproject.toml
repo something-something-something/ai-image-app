@@ -7,11 +7,11 @@ authors = ["Your Name <you@example.com>"]
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 Pillow = "^9.2.0"
-torch= {url = "https://download.pytorch.org/whl/cu116/torch-1.12.1%2Bcu116-cp310-cp310-linux_x86_64.whl"}
+torch= {url = "https://download.pytorch.org/whl/cu118/torch-2.0.0%2Bcu118-cp310-cp310-linux_x86_64.whl"}
 transformers = "^4.21.1"
 Flask = "^2.2.2"
 webargs = "^8.2.0"
-diffusers = "^0.2.4"
+diffusers = "0.14.0"
 # diffusers = { git = "https://github.com/huggingface/diffusers.git", rev="e30e1b89d0a85073f8f5338b86445bf8ed892086" }
 scipy = "^1.9.0"
 ftfy = "^6.1.1"

@@ -3,17 +3,17 @@ import os
 import posixpath
 import json
 from datetime import date,timezone,datetime
-from diffusers import DiffusionPipeline,StableDiffusionPipeline,LMSDiscreteScheduler
+from diffusers import DiffusionPipeline,StableDiffusionPipeline,LMSDiscreteScheduler,StableDiffusionImg2ImgPipeline
 from PIL import Image
 from torch import autocast
 import torch
-from additionalpipelines import imgtoimg
+
 
 def genLatentDiffusion(prompt='default prompt',dimmSteps=200,dimmEta=0.0,numIter=1,height=256,width=256,numSamples=4,scale=5.0):
 
 	model=DiffusionPipeline.from_pretrained("CompVis/ldm-text2im-large-256")
 
-	images=model(prompt=[prompt]*numSamples,height=height,width=width, guidance_scale=scale,eta=dimmEta,num_inference_steps=dimmSteps)["sample"]
+	images=model(prompt=[prompt]*numSamples,height=height,width=width, guidance_scale=scale,eta=dimmEta,num_inference_steps=dimmSteps).images
 	return {
 		"images":images,
 		"metadata":{
@@ -49,7 +49,7 @@ def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,s
 		model.safety_checker=blah
 	
 	with autocast("cuda"):
-		images=model(prompt=[prompt]*num_samples, num_inference_steps= num_inference_steps,eta=eta,guidance_scale=guidance_scale,height=height,width=width,  generator=generatorSeed)["sample"]
+		images=model(prompt=[prompt]*num_samples, num_inference_steps= num_inference_steps,eta=eta,guidance_scale=guidance_scale,height=height,width=width,  generator=generatorSeed).images
 	return {
 		'images':images,
 		'metadata':{
@@ -78,14 +78,13 @@ def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,s
 
 def genStableDiffusionImgToImg(prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=512,width=512,num_samples=4,enable_safety_checker=True,image=Image.new("RGB",(512,512)),strength=0.8):
 	img=image.resize((width,height))
-	initImg=imgtoimg.preprocess(img)
 	# lms=LMSDiscreteScheduler(
 	# 	beta_start=0.000085,
 	# 	beta_end=0.012,
 	# 	beta_schedule="scaled_linear"
 	# )
 
-	model=imgtoimg.StableDiffusionImg2ImgPipeline.from_pretrained(
+	model=StableDiffusionImg2ImgPipeline.from_pretrained(
 		"models/stable-diffusion-v1-4",
 	 	local_files_only=True
 		#scheduler=lms
@@ -96,7 +95,7 @@ def genStableDiffusionImgToImg(prompt='default prompt', num_inference_steps=50,e
 		model.safety_checker=blah
 	
 	with autocast("cuda"):
-		images=model(prompt=[prompt]*num_samples, num_inference_steps= num_inference_steps,eta=eta,guidance_scale=guidance_scale,  generator=generatorSeed,init_image=initImg,strength=strength)["sample"]
+		images=model(prompt=[prompt]*num_samples, image=[img]*num_samples, num_inference_steps= num_inference_steps,eta=eta,guidance_scale=guidance_scale,  generator=generatorSeed,strength=strength).images
 	return {
 		'images':images,
 		'metadata':{
