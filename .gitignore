@@ -6,3 +6,4 @@ backend/static/generated/images
 backend/modelimg/
 backend/models
 __pycache__/
+.vscode/
