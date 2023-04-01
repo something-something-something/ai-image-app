@@ -3,7 +3,7 @@ import os
 import posixpath
 import json
 from datetime import date,timezone,datetime
-from diffusers import DiffusionPipeline,StableDiffusionPipeline,LMSDiscreteScheduler,StableDiffusionImg2ImgPipeline
+from diffusers import DiffusionPipeline,StableDiffusionPipeline,LMSDiscreteScheduler,StableDiffusionImg2ImgPipeline,DPMSolverMultistepScheduler
 from PIL import Image
 from torch import autocast
 import torch
@@ -67,6 +67,53 @@ def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,s
 				'beta_start':0.000085,
 				'beta_end':0.012,
 				'beta_schedule':"scaled_linear"
+			}
+		}
+	}
+
+
+def genStableDiffusion_2_1_768(negative_prompt='',prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=768,width=768,num_samples=4,enable_safety_checker=True):
+
+	# kdpm2=EulerAncestralDiscreteScheduler(
+	# 	num_train_timesteps=1000,
+	# 	beta_start=0.0001,
+	# 	beta_end=0.02,
+	# 	beta_schedule="linear",
+	# 	prediction_type='epsilon'
+	# )
+	# lms=LMSDiscreteScheduler(
+	# 	beta_start=0.000085,
+	# 	beta_end=0.012,
+	# 	beta_schedule="scaled_linear"
+	# )
+
+	model=StableDiffusionPipeline.from_pretrained(
+		"models/stable-diffusion-2-1",
+	 	local_files_only=True,
+		torch_dtype=torch.float16
+	)
+	model.scheduler = DPMSolverMultistepScheduler.from_config(model.scheduler.config)
+	model = model.to("cuda")
+
+	generatorSeed=torch.Generator("cuda").manual_seed(seed)
+	
+	images = model(prompt=prompt, negative_prompt=negative_prompt, num_images_per_prompt=num_samples, num_inference_steps= num_inference_steps, eta=eta, guidance_scale=guidance_scale, height=height, width=width,   generator=generatorSeed).images
+
+	return {
+		'images':images,
+		'metadata':{
+			'prompt':prompt,
+			'negative_prompt':negative_prompt,
+			'num_inference_steps':num_inference_steps,
+			'eta':eta,
+			'height':height,
+			'width':width,
+			'num_samples':num_samples,
+			'guidance_scale':guidance_scale,
+			'seed':seed,
+			'model':'stable-diffusion2.1:stabilityai/stable-diffusion-2-1',
+			'scheduler':{
+				'type':'DPMSolverMultistepScheduler',
 			}
 		}
 	}
