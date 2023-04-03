@@ -211,7 +211,7 @@ def genStableDiffusion_2_1_768_ImagesPreflight():
 	return '',optionsPrefilghtResponseHeaders
 
 @app.route("/stableDiffusion2-1-768/genimage",methods=["POST"])
-@use_args({"prompt":fields.Str(required=True),"negative_prompt":fields.Str(required=True),"guidance_scale":fields.Float(),"width":fields.Integer(),"height":fields.Integer(),"num_samples":fields.Integer(),"seed":fields.Integer(),"eta":fields.Float(),"num_inference_steps":fields.Integer(),"enable_safety_checker":fields.Boolean(truthy=['on'],falsy=['off']),"use_temp_dir":fields.Boolean(truthy=['on'],falsy=['off'])})
+@use_args({"prompt":fields.Str(required=True),"negative_prompt":fields.Str(required=True),"guidance_scale":fields.Float(),"width":fields.Integer(),"height":fields.Integer(),"num_samples":fields.Integer(),"seed":fields.Integer(),"eta":fields.Float(),"num_inference_steps":fields.Integer(),"use_temp_dir":fields.Boolean(truthy=['on'],falsy=['off'])})
 def genStableDiffusion_2_1_768_Images(args):
 	print('gen stablediff')
 
@@ -223,7 +223,7 @@ def genStableDiffusion_2_1_768_Images(args):
 		dirToWriteImage=genImages.imageDirTempPath(tempDirForGenerated)
 		urlPathForImages=genImages.imageDirTempUrlPath()
 
-	images=genImages.saveImages(genImages.genStableDiffusion_2_1_768(prompt=args["prompt"], negative_prompt=args["negative_prompt"], width=args["width"], height=args["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"],enable_safety_checker=args["enable_safety_checker"]),"stable-diffusion2-1-768",dirToWriteImage,urlPath=urlPathForImages)
+	images=genImages.saveImages(genImages.genStableDiffusion_2_1_768(prompt=args["prompt"], negative_prompt=args["negative_prompt"], width=args["width"], height=args["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"]),"stable-diffusion2-1-768",dirToWriteImage,urlPath=urlPathForImages)
 	
 	return {
 		"prompt":args["prompt"],
@@ -291,6 +291,83 @@ def getStableDiffusion_2_1_768_FormData():
 				"defaultValue":"100"
 			},
 			{
+				"name":'use_temp_dir',
+				"displayName":"use temp dir",
+				"defaultValue":"off",
+				"type":"radio",
+				'possibleValues':[
+					{
+						'value':'on',
+						'displayName':'save to temp dir '+tempDirForGenerated
+					},
+					{
+						'value':'off',
+						'displayName':'Save to backend/static'
+					}
+					
+				]
+			}
+
+		]
+	},defaultHeaders
+
+
+
+
+
+@app.route("/controlnetScribbleToStableDiffusion1-5/getFormFields",methods=["OPTIONS"])
+def getControlnetScribbleToStableDiffusion_1_5FormDataPreflight():
+	print('preflight')
+	return '',optionsPrefilghtResponseHeaders
+
+
+@app.route("/controlnetScribbleToStableDiffusion1-5/getFormFields",methods=["POST"])
+def getControlnetScribbleToStableDiffusion_1_5FormData():
+	
+	return {
+		"formFieldsData":[
+			{
+				"name":'prompt',
+				"displayName":"Prompt",
+				"defaultValue":"a painting of an ai",
+				"type":"textbox"
+			},
+			{
+				"name":'image',
+				"displayName":"Image",
+				"defaultValue":{
+					'imgUrl':'',
+					'width':512,
+					'height':512
+				},
+				"type":"imagewidthheight"
+			},
+			{
+				"name":'guidance_scale',
+				"displayName":"guidance_scale",
+				"defaultValue":"7.5"
+			},
+			{
+				"name":'num_samples',
+				"displayName":"Number of pictures",
+				"defaultValue":"6"
+			},
+			{
+				"name":'num_inference_steps',
+				"displayName":"Number Inference Steps",
+				"defaultValue":"50"
+			},
+			{
+				"name":'eta',
+				"displayName":"eta",
+				"defaultValue":"0.0"
+			},
+			{
+				"name":'seed',
+				"displayName":"seed",
+				"defaultValue":"100"
+			},
+			{
 				"name":'enable_safety_checker',
 				"displayName":"saftey checker",
 				"defaultValue":"on",
@@ -324,10 +401,74 @@ def getStableDiffusion_2_1_768_FormData():
 					
 				]
 			}
-
 		]
 	},defaultHeaders
 
+
+
+
+
+
+@app.route("/controlnetScribbleToStableDiffusion1-5/genimage",methods=["OPTIONS"])
+def genControlnetScribbleToStableDiffusion_1_5_ImagesPreflight():
+	print('preflight')
+	return '',optionsPrefilghtResponseHeaders
+
+@app.route("/controlnetScribbleToStableDiffusion1-5/genimage",methods=["POST"])
+@use_args({
+	"prompt":fields.Str(required=True),
+	"guidance_scale":fields.Float(),
+	"num_samples":fields.Integer(),
+	"seed":fields.Integer(),
+	"eta":fields.Float(),
+	"num_inference_steps":fields.Integer(),
+	"image":fields.Nested({
+		"height":fields.Integer(),
+		"width":fields.Integer(),
+		"imgUrl":fields.Str(required=True)
+		}),
+	"use_temp_dir":fields.Boolean(truthy=['on'],falsy=['off']),
+	"enable_safety_checker":fields.Boolean(truthy=['on'],falsy=['off'])
+})
+def genControlnetScribbleToStableDiffusion_1_5_Images(args):
+
+	
+	img=Image.open(urllib.request.urlopen(args["image"]["imgUrl"])).convert("RGB")
+
+
+	dirToWriteImage=genImages.imageDirPath()
+	urlPathForImages=None
+
+	if args["use_temp_dir"]:
+		dirToWriteImage=genImages.imageDirTempPath(tempDirForGenerated)
+		urlPathForImages=genImages.imageDirTempUrlPath()
+
+	images=genImages.saveImages(genImages.genControlnetScribbleToStableDiffusion_1_5(prompt=args["prompt"], width=args["image"]["width"], height=args["image"]["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"],image=img,enable_safety_checker=args["enable_safety_checker"]),"controlnet-scribles-stable-diffusion-1-5",dirToWriteImage,urlPath=urlPathForImages)
+
+	return {
+		"prompt":args["prompt"],
+		"files":images
+	},defaultHeaders
+
+
+
+	
+	img=Image.open(urllib.request.urlopen(args["image"]["imgUrl"])).convert("RGB")
+
+
+	dirToWriteImage=genImages.imageDirPath()
+	urlPathForImages=None
+	
+	if args["use_temp_dir"]:
+		dirToWriteImage=genImages.imageDirTempPath(tempDirForGenerated)
+		urlPathForImages=genImages.imageDirTempUrlPath()
+
+	images=genImages.saveImages(genImages.genControlnetScribbleToStableDiffusion_2_1_512(prompt=args["prompt"], width=args["image"]["width"], height=args["image"]["height"], guidance_scale=args["guidance_scale"],num_samples=args["num_samples"],seed=args["seed"],num_inference_steps=args["num_inference_steps"],image=img,enable_safety_checker=args["enable_safety_checker"]),"controlnet-scribles-stable-diffusion-2-1-512",dirToWriteImage,urlPath=urlPathForImages)
+
+	return {
+		"prompt":args["prompt"],
+		"files":images
+	},defaultHeaders
 
 
 @app.route("/stableDiffusionImgToImg/getFormFields",methods=["OPTIONS"])

@@ -10,6 +10,13 @@ function MainPage() {
 	return (
 		<>
 			<details>
+				<summary>Control net scribble to Stable Diffusion 1.5</summary>
+				<ImageGenForm
+					endpointForFetchingFormData="http://localhost:5000/controlnetScribbleToStableDiffusion1-5/getFormFields"
+					endpointForSubmittingForm="http://localhost:5000/controlnetScribbleToStableDiffusion1-5/genimage"
+				/>
+			</details>
+			<details>
 				<summary>Stable Diffusion 2.1 768</summary>
 				<ImageGenForm
 					endpointForFetchingFormData="http://localhost:5000/stableDiffusion2-1-768/getFormFields"

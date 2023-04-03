@@ -3,7 +3,7 @@ import os
 import posixpath
 import json
 from datetime import date,timezone,datetime
-from diffusers import DiffusionPipeline,StableDiffusionPipeline,LMSDiscreteScheduler,StableDiffusionImg2ImgPipeline,DPMSolverMultistepScheduler
+from diffusers import DiffusionPipeline,StableDiffusionPipeline,LMSDiscreteScheduler,StableDiffusionImg2ImgPipeline,DPMSolverMultistepScheduler,ControlNetModel,StableDiffusionControlNetPipeline
 from PIL import Image
 from torch import autocast
 import torch
@@ -72,7 +72,7 @@ def genStableDiffusion(prompt='default prompt', num_inference_steps=50,eta=0.0,s
 	}
 
 
-def genStableDiffusion_2_1_768(negative_prompt='',prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=768,width=768,num_samples=4,enable_safety_checker=True):
+def genStableDiffusion_2_1_768(negative_prompt='',prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=768,width=768,num_samples=4):
 
 	# kdpm2=EulerAncestralDiscreteScheduler(
 	# 	num_train_timesteps=1000,
@@ -119,8 +119,46 @@ def genStableDiffusion_2_1_768(negative_prompt='',prompt='default prompt', num_i
 	}
 
 
+def genControlnetScribbleToStableDiffusion_1_5(prompt='default prompt', num_inference_steps=50,eta=0.0,enable_safety_checker=True, seed=100,guidance_scale=7.5,height=512,width=512,num_samples=4,image=Image.new("RGB",(512,512))):
+	img=image.resize((width,height))
+	
+	controlNetModel=ControlNetModel.from_pretrained(
+		"models/sd-controlnet-scribble",
+	 	local_files_only=True,
+		torch_dtype=torch.float16
+	) 
 
+	model=StableDiffusionControlNetPipeline.from_pretrained(
+		"models/stable-diffusion-v1-5",
+	 	local_files_only=True,
+		controlnet=controlNetModel,
+		torch_dtype=torch.float16
+	)
+	model.scheduler = DPMSolverMultistepScheduler.from_config(model.scheduler.config)
+	model = model.to("cuda")
 
+	generatorSeed=torch.Generator("cuda").manual_seed(seed)
+	if not enable_safety_checker:
+		model.safety_checker=None
+	
+	images=model(prompt=prompt, num_images_per_prompt=num_samples,  image=img, num_inference_steps= num_inference_steps,eta=eta,guidance_scale=guidance_scale,  generator=generatorSeed).images
+	return {
+		'images':images,
+		'metadata':{
+			'prompt':prompt,
+			'num_inference_steps':num_inference_steps,
+			'eta':eta,
+			'height':height,
+			'width':width,
+			'num_samples':num_samples,
+			'guidance_scale':guidance_scale,
+			'seed':seed,
+			'model':'controlnetScribble:lllyasviel/sd-controlnet-scribble+stable-diffusion-v1.5:runwayml/stable-diffusion-v1-5',
+			'scheduler':{
+				'type':'DPMSolverMultistepScheduler'
+			}
+		}
+	}
 
 
 def genStableDiffusionImgToImg(prompt='default prompt', num_inference_steps=50,eta=0.0,seed=100,guidance_scale=7.5,height=512,width=512,num_samples=4,enable_safety_checker=True,image=Image.new("RGB",(512,512)),strength=0.8):
